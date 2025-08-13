@@ -1,0 +1,112 @@
+name: Trigger release
+on:
+  push:
+    tags:
+      - '**' # Event on every tag
+permissions:
+  contents: write
+jobs:
+  build-documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract tag name
+        id: extract_tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Download and extract bundled SDK
+        env:
+          GH_TOKEN: ${{ secrets.AIC_SDK_ACCESS_TOKEN }}
+          TARGET: "aic-sdk-x86_64-unknown-linux-gnu-${{ steps.extract_tag.outputs.TAG_NAME }}.tar.gz"
+        run: |
+            set -euo pipefail
+            VERSION="${{ steps.extract_tag.outputs.TAG_NAME}}"
+            echo "The pushed tag is: $VERSION"
+
+            # Clean up any previous SDK downloads and extracted files
+            rm -rf sdk.tar.gz sdk/ || true
+
+            echo "Downloading $TARGET from private repo…"
+            echo "Looking for release: $VERSION"
+
+            echo "Attempting download..."
+            if ! gh release download --repo ai-coustics/aic-sdk "$VERSION" --pattern "$TARGET" --output sdk.tar.gz --clobber; then
+                echo "Failed to download release $VERSION with pattern $TARGET"
+                echo "Checking what assets are available for this release:"
+                gh release view --repo ai-coustics/aic-sdk "$VERSION" || echo "Release $VERSION not found"
+                exit 1
+            fi
+
+      - name: Extract SDK
+        run: |
+          mkdir sdk
+          tar -xzf sdk.tar.gz -C sdk
+
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: "source"
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Remove Tag
+        working-directory: ./source
+        env:
+          RELEASE_TAG: ${{ steps.extract_tag.outputs.TAG_NAME }}
+        run: |
+          # delete the remote tag
+          git push origin --delete $RELEASE_TAG
+          # delete local tag
+          git tag -d $RELEASE_TAG
+
+      - name: Clear repo
+        working-directory: ./source
+        run: git rm -rf .
+
+      - name: Copy documentation
+        run: |
+          cp -r sdk/docs/* source/
+          cp -r sdk/examples/ source/
+
+      - name: Push documentation
+        env:
+          RELEASE_TAG: ${{ steps.extract_tag.outputs.TAG_NAME }}
+        working-directory: ./source
+        run: |
+          DOCS_BRANCH="docs/${RELEASE_TAG}"
+          git checkout --orphan $DOCS_BRANCH
+          git add *
+          git status
+          git commit -m "Release $RELEASE_TAG"
+          # push to the branch
+          git push origin $DOCS_BRANCH
+          # create tag
+          git tag $RELEASE_TAG
+          # push to tag
+          git push origin tag $RELEASE_TAG
+
+      - name: Download release
+        env:
+          GH_TOKEN: ${{ secrets.AIC_SDK_ACCESS_TOKEN }}
+          RELEASE_TAG: ${{ steps.extract_tag.outputs.TAG_NAME }}
+        run: |
+          mkdir releases
+
+          gh release download $RELEASE_TAG \
+            --repo ai-coustics/aic-sdk \
+            --dir releases \
+            --pattern '*'
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.extract_tag.outputs.TAG_NAME }}
+        run: |
+          gh release create $RELEASE_TAG \
+            --repo ${{ github.repository }} \
+            --title "$RELEASE_TAG" \
+            --notes-file source/release-notes.md \
+            releases/*
