@@ -2,7 +2,7 @@ name: Trigger release
 on:
   push:
     tags:
-      - '**' # Event on every tag
+      - "**" # Event on every tag
 permissions:
   contents: write
 jobs:
@@ -18,28 +18,41 @@ jobs:
           GH_TOKEN: ${{ secrets.AIC_SDK_ACCESS_TOKEN }}
           TARGET: "aic-sdk-x86_64-unknown-linux-gnu-${{ steps.extract_tag.outputs.TAG_NAME }}.tar.gz"
         run: |
-            set -euo pipefail
-            VERSION="${{ steps.extract_tag.outputs.TAG_NAME}}"
-            echo "The pushed tag is: $VERSION"
+          set -euo pipefail
+          VERSION="${{ steps.extract_tag.outputs.TAG_NAME}}"
+          echo "The pushed tag is: $VERSION"
 
-            # Clean up any previous SDK downloads and extracted files
-            rm -rf sdk.tar.gz sdk/ || true
+          # Clean up any previous SDK downloads and extracted files
+          rm -rf sdk.tar.gz sdk/ || true
 
-            echo "Downloading $TARGET from private repo…"
-            echo "Looking for release: $VERSION"
+          echo "Downloading $TARGET from private repo…"
+          echo "Looking for release: $VERSION"
 
-            echo "Attempting download..."
-            if ! gh release download --repo ai-coustics/aic-sdk "$VERSION" --pattern "$TARGET" --output sdk.tar.gz --clobber; then
-                echo "Failed to download release $VERSION with pattern $TARGET"
-                echo "Checking what assets are available for this release:"
-                gh release view --repo ai-coustics/aic-sdk "$VERSION" || echo "Release $VERSION not found"
-                exit 1
-            fi
+          echo "Attempting download..."
+          if ! gh release download --repo ai-coustics/aic-sdk "$VERSION" --pattern "$TARGET" --output sdk.tar.gz --clobber; then
+              echo "Failed to download release $VERSION with pattern $TARGET"
+              echo "Checking what assets are available for this release:"
+              gh release view --repo ai-coustics/aic-sdk "$VERSION" || echo "Release $VERSION not found"
+              exit 1
+          fi
 
       - name: Extract SDK
         run: |
           mkdir sdk
           tar -xzf sdk.tar.gz -C sdk
+
+      - name: Verify SDK by running examples
+        env:
+          AIC_SDK_LICENSE: ${{ secrets.AIC_SDK_LICENSE }}
+        run: |
+          set -euo pipefail
+          echo "Verifying SDK functionality by running examples..."
+          cd sdk/examples
+          if ! make run; then
+            echo "❌ SDK verification failed - examples could not run successfully"
+            exit 1
+          fi
+          echo "✅ SDK verification successful - examples ran without errors"
 
       - name: Checkout Source Repository
         uses: actions/checkout@v4
