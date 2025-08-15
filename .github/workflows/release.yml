@@ -54,6 +54,9 @@ jobs:
           fi
           echo "✅ SDK verification successful - examples ran without errors"
 
+          echo "Cleaning up build artifacts..."
+          make clean
+
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
