@@ -86,6 +86,7 @@ jobs:
         run: |
           cp -r sdk/docs/* source/
           cp -r sdk/examples/ source/
+          cp -r sdk/include/ source/
 
       - name: Push documentation
         env:
