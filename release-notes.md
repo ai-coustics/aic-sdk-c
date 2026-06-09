@@ -1,5 +1,3 @@
-## 0.19.1
-
 ## New Features
 
 - Windows release bundles include the DLL import library `aic.dll.lib`
