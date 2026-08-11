@@ -41,6 +41,48 @@ jobs:
           mkdir sdk
           tar -xzf sdk.tar.gz -C sdk
 
+      - name: Extract release notes from changelog
+        env:
+          RELEASE_TAG: ${{ steps.extract_tag.outputs.TAG_NAME }}
+        run: |
+          set -eu
+          CHANGELOG=sdk/docs/CHANGELOG.md
+
+          extract() {
+            awk -v version="$1" '
+              /^## / {
+                if (found) exit
+                if ($2 == version) { found = 1 }
+                next
+              }
+              found {
+                if (!started && NF == 0) next
+                started = 1
+                print
+              }
+            ' "$CHANGELOG"
+          }
+
+          extract "$RELEASE_TAG" > release-notes.md
+
+          # A pre-release tag (0.23.0-rc) falls back to the section of the version it is a candidate for.
+          if [ ! -s release-notes.md ]; then
+            extract "${RELEASE_TAG%%-*}" > release-notes.md
+          fi
+
+          if [ ! -s release-notes.md ]; then
+            case "$RELEASE_TAG" in
+              [0-9]*.[0-9]*.[0-9]*)
+                echo "::error::$CHANGELOG has no entry for $RELEASE_TAG" >&2
+                exit 1
+                ;;
+              *)
+                echo "::warning::$CHANGELOG has no entry for $RELEASE_TAG, publishing a placeholder body"
+                echo "Build from tag \`$RELEASE_TAG\`. No changelog entry for this tag." > release-notes.md
+                ;;
+            esac
+          fi
+
       - name: Verify SDK by running examples
         env:
           AIC_SDK_LICENSE: ${{ secrets.AIC_SDK_LICENSE }}
@@ -125,5 +167,5 @@ jobs:
           gh release create $RELEASE_TAG \
             --repo ${{ github.repository }} \
             --title "$RELEASE_TAG" \
-            --notes-file source/release-notes.md \
+            --notes-file release-notes.md \
             releases/*
