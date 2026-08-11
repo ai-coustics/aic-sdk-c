@@ -41,46 +41,20 @@ jobs:
           mkdir sdk
           tar -xzf sdk.tar.gz -C sdk
 
-      - name: Extract release notes from changelog
+      - name: Fetch release notes from the private release
         env:
+          GH_TOKEN: ${{ secrets.AIC_SDK_ACCESS_TOKEN }}
           RELEASE_TAG: ${{ steps.extract_tag.outputs.TAG_NAME }}
         run: |
           set -eu
-          CHANGELOG=sdk/docs/CHANGELOG.md
-
-          extract() {
-            awk -v version="$1" '
-              /^## / {
-                if (found) exit
-                if ($2 == version) { found = 1 }
-                next
-              }
-              found {
-                if (!started && NF == 0) next
-                started = 1
-                print
-              }
-            ' "$CHANGELOG"
-          }
-
-          extract "$RELEASE_TAG" > release-notes.md
-
-          # A pre-release tag (0.23.0-rc) falls back to the section of the version it is a candidate for.
-          if [ ! -s release-notes.md ]; then
-            extract "${RELEASE_TAG%%-*}" > release-notes.md
-          fi
+          # aic-sdk's own release.yml already extracted the changelog section
+          # for this tag and used it as that release's body, so reuse it as-is
+          # instead of re-parsing CHANGELOG.md here.
+          gh release view "$RELEASE_TAG" --repo ai-coustics/aic-sdk --json body -q .body > release-notes.md
 
           if [ ! -s release-notes.md ]; then
-            case "$RELEASE_TAG" in
-              [0-9]*.[0-9]*.[0-9]*)
-                echo "::error::$CHANGELOG has no entry for $RELEASE_TAG" >&2
-                exit 1
-                ;;
-              *)
-                echo "::warning::$CHANGELOG has no entry for $RELEASE_TAG, publishing a placeholder body"
-                echo "Build from tag \`$RELEASE_TAG\`. No changelog entry for this tag." > release-notes.md
-                ;;
-            esac
+            echo "::error::ai-coustics/aic-sdk release $RELEASE_TAG has an empty body" >&2
+            exit 1
           fi
 
       - name: Verify SDK by running examples
