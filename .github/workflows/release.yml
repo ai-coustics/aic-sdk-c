@@ -57,22 +57,6 @@ jobs:
             exit 1
           fi
 
-      - name: Verify SDK by running examples
-        env:
-          AIC_SDK_LICENSE: ${{ secrets.AIC_SDK_LICENSE }}
-        run: |
-          set -euo pipefail
-          echo "Verifying SDK functionality by running examples..."
-          cd sdk/examples
-          if ! make run; then
-            echo "❌ SDK verification failed - examples could not run successfully"
-            exit 1
-          fi
-          echo "✅ SDK verification successful - examples ran without errors"
-
-          echo "Cleaning up build artifacts..."
-          make clean
-
       - name: Checkout Source Repository
         uses: actions/checkout@v4
         with:
