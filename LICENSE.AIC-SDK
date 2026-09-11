@@ -1,0 +1,17 @@
+AIC SDK BINARY LICENSE
+
+The ai-coustics SDK binary (libaic, distributed as libaic.a, libaic.so,
+libaic.dylib or aic.dll together with the aic.h header) and the ai-coustics
+models are proprietary software of ai-coustics GmbH. They are not covered by
+the Apache-2.0 license in LICENSE, which applies only to the C interface source
+code in this repository.
+
+Your use of the SDK binary and the models is governed by:
+
+  ai-coustics Terms of Service   https://ai-coustics.com/legal/terms
+  ai-coustics Model License      https://ai-coustics.com/legal/model-license
+
+By downloading, installing or using the SDK binary or the models you agree to
+these terms.
+
+Copyright (c) ai-coustics GmbH. All rights reserved.
