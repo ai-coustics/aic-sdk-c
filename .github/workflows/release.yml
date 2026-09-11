@@ -87,6 +87,8 @@ jobs:
           cp -r sdk/docs/* source/
           cp -r sdk/examples/ source/
           cp -r sdk/include/ source/
+          # The docs branch is orphaned from a cleared tree, so restore the license from main.
+          git -C source checkout HEAD -- LICENSE.AIC-SDK
 
       - name: Push documentation
         env:
