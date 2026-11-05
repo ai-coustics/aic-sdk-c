@@ -1,10 +1,10 @@
 AIC_LIB_PATH ?= ../lib/libaic.a
 AIC_INCLUDE_PATH ?= ../include/
 MODEL_DIR ?= models
-QUAIL_MODEL_URL := https://artifacts.ai-coustics.io/models/quail-vf-2-2-s-16khz/v7/quail_vf_2_2_s_16khz_gf70x7zf_v14.aicmodel
-DEFAULT_ENHANCEMENT_MODEL_PATH := $(MODEL_DIR)/v7/quail_vf_2_2_s_16khz_gf70x7zf_v14.aicmodel
-TYTO_MODEL_URL := https://artifacts.ai-coustics.io/models/tyto-1-1-l-16khz/v7/tyto_1_1_l_16khz_t7y7v3h5_v58.aicmodel
-DEFAULT_ANALYZER_MODEL_PATH := $(MODEL_DIR)/v7/tyto_1_1_l_16khz_t7y7v3h5_v58.aicmodel
+QUAIL_MODEL_URL := https://artifacts.ai-coustics.io/models/quail-vf-2-3-s-16khz/v8/quail_vf_2_3_s_16khz_398hl32w_v12.aicmodel
+DEFAULT_ENHANCEMENT_MODEL_PATH := $(MODEL_DIR)/v8/quail_vf_2_3_s_16khz_398hl32w_v12.aicmodel
+TYTO_MODEL_URL := https://artifacts.ai-coustics.io/models/tyto-1-2-l-16khz/v8/tyto_1_2_l_16khz_ef8fy2t4_v65.aicmodel
+DEFAULT_ANALYZER_MODEL_PATH := $(MODEL_DIR)/v8/tyto_1_2_l_16khz_ef8fy2t4_v65.aicmodel
 
 ifeq ($(origin MODEL_PATH),undefined)
 ENHANCEMENT_MODEL_PATH := $(DEFAULT_ENHANCEMENT_MODEL_PATH)
